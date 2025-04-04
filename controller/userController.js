@@ -23,6 +23,7 @@ export const registerUser = async (req, res) => {
       lastName,
       email,
       password: hashedPassword,
+      Token: "",
     });
     console.log("New User Object:", newUser);
 
@@ -65,7 +66,15 @@ export const loginUser = async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: "24h" }
     );
+    console.log("token: ", token);
 
+    const updateduser = await User.findOneAndUpdate(
+      { email: existingUser.email },
+      { $set: { Token: token } },
+      { returnDocument: "after" }
+    );
+
+    console.log("updateduser: ", updateduser);
     res
       .status(200)
       .json({ message: "Login successful", token, data: existingUser });
