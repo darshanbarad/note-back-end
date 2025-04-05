@@ -1,5 +1,6 @@
 import NoteModel from "../models/UserNoteSchema.js";
 
+// 📝 Create Note
 export async function createNote(req, res) {
   const userId = req.user.userId;
 
@@ -10,6 +11,8 @@ export async function createNote(req, res) {
       category: req.body.category,
       author: userId,
       isPublic: req.body.isPublic,
+      noteDate: req.body.noteDate, // 📅 Manual Note Date
+      reminder: req.body.reminder, // ⏰ Reminder Date
     });
 
     const userNote = await Note.save();
@@ -19,135 +22,23 @@ export async function createNote(req, res) {
   }
 }
 
-// export async function getUserNote(req, res) {
-//   try {
-//     const userId = req.user.userId;
-//     const { search, sort, order, category, startDate, endDate, isPublic } =
-//       req.query;
-
-//     let query = { author: userId };
-
-//     if (search) {
-//       query.$or = [
-//         { title: { $regex: search, $options: "i" } },
-//         { content: { $regex: search, $options: "i" } },
-//       ];
-//     }
-
-//     if (category) {
-//       query.category = category;
-//     }
-
-//     if (isPublic !== undefined) {
-//       query.isPublic = isPublic === "true";
-//     }
-
-//     if (startDate && endDate) {
-//       const start = new Date(startDate);
-//       const end = new Date(endDate);
-
-//       if (!isNaN(start) && !isNaN(end)) {
-//         end.setHours(23, 59, 59, 999);
-//         query.createdAt = {
-//           $gte: start,
-//           $lte: end,
-//         };
-//       }
-//     }
-
-//     let sortOptions = {};
-//     if (sort) {
-//       sortOptions[sort] = order === "desc" ? -1 : 1;
-//     } else {
-//       sortOptions["createdAt"] = -1;
-//     }
-
-//     const userNoteData = await NoteModel.find(query)
-//       .populate("author", "name email")
-//       .sort(sortOptions);
-
-//     res.status(200).json({ message: "Success", userNoteData });
-//   } catch (error) {
-//     console.error("Error fetching notes:", error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// }
-
-// export async function getUserNote(req, res) {
-//   try {
-//     const userId = req.user.userId;
-//     const { search, sort, order, category, startDate, endDate, isPublic } =
-//       req.query;
-
-//     // Set the query for the user's own notes
-//     let query = { author: userId };
-
-//     if (search) {
-//       query.$or = [
-//         { title: { $regex: search, $options: "i" } },
-//         { content: { $regex: search, $options: "i" } },
-//       ];
-//     }
-
-//     if (category) {
-//       query.category = category;
-//     }
-
-//     if (startDate && endDate) {
-//       const start = new Date(startDate);
-//       const end = new Date(endDate);
-
-//       if (!isNaN(start) && !isNaN(end)) {
-//         end.setHours(23, 59, 59, 999);
-//         query.createdAt = {
-//           $gte: start,
-//           $lte: end,
-//         };
-//       }
-//     }
-
-//     let sortOptions = {};
-//     if (sort) {
-//       sortOptions[sort] = order === "desc" ? -1 : 1;
-//     } else {
-//       sortOptions["createdAt"] = -1;
-//     }
-
-//     // Query for the user's own notes and public notes (if isPublic is true)
-//     let notes = await NoteModel.find(query)
-//       .populate("author", "name email")
-//       .sort(sortOptions);
-
-//     // If `isPublic` is not undefined, filter based on public visibility
-//     if (isPublic !== undefined) {
-//       notes = notes.filter((note) => note.isPublic === (isPublic === "true"));
-//     }
-
-//     // Fetch all public notes and append them to the user's notes (if they are logged in)
-//     const publicNotes = await NoteModel.find({ isPublic: true }).populate(
-//       "author",
-//       "name email"
-//     );
-
-//     // Combine the user's notes (private/public) and the public notes
-//     const combinedNotes = [...notes, ...publicNotes];
-
-//     res.status(200).json({ message: "Success", userNoteData: combinedNotes });
-//   } catch (error) {
-//     console.error("Error fetching notes:", error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// }
+// 🔍 Get Notes
 export async function getUserNote(req, res) {
   try {
     const userId = req.user.userId;
-    const { search, sort, order, category, startDate, endDate, isPublic } =
-      req.query;
+    const {
+      search,
+      sort,
+      order,
+      category,
+      startDate,
+      endDate,
+      isPublic,
+      noteDate,
+    } = req.query;
 
-    // Start by setting the query to fetch the user's notes
     let query = { author: userId };
 
-    // If a search term is provided, filter notes based on title and content
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -155,26 +46,29 @@ export async function getUserNote(req, res) {
       ];
     }
 
-    // Apply the category filter if provided
     if (category) {
       query.category = category;
     }
 
-    // Apply the date range filter if provided
+    // ✅ Filter by noteDate (exact match)
+    if (noteDate) {
+      const selectedDate = new Date(noteDate);
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+      query.noteDate = {
+        $gte: selectedDate,
+        $lt: nextDate,
+      };
+    }
+
+    // ✅ Filter by createdAt date range
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-
-      if (!isNaN(start) && !isNaN(end)) {
-        end.setHours(23, 59, 59, 999);
-        query.createdAt = {
-          $gte: start,
-          $lte: end,
-        };
-      }
+      end.setHours(23, 59, 59, 999);
+      query.createdAt = { $gte: start, $lte: end };
     }
 
-    // Sort options if provided
     let sortOptions = {};
     if (sort) {
       sortOptions[sort] = order === "desc" ? -1 : 1;
@@ -182,19 +76,16 @@ export async function getUserNote(req, res) {
       sortOptions["createdAt"] = -1;
     }
 
-    // Fetch the user's own notes (filtered by the search term, if provided)
     let userNotes = await NoteModel.find(query)
       .populate("author", "name email")
       .sort(sortOptions);
 
-    // If `isPublic` is provided in the query, filter the public notes
     if (isPublic !== undefined) {
       userNotes = userNotes.filter(
         (note) => note.isPublic === (isPublic === "true")
       );
     }
 
-    // Fetch all public notes, regardless of the logged-in user
     let publicNotes = [];
     if (!search) {
       publicNotes = await NoteModel.find({ isPublic: true })
@@ -202,7 +93,6 @@ export async function getUserNote(req, res) {
         .sort(sortOptions);
     }
 
-    // Combine the user's notes with the public notes, only if search is not applied
     const combinedNotes = search ? userNotes : [...userNotes, ...publicNotes];
 
     res.status(200).json({ message: "Success", userNoteData: combinedNotes });
@@ -212,20 +102,17 @@ export async function getUserNote(req, res) {
   }
 }
 
+// 🌐 Get Public Notes
 export async function getPublicNote(req, res) {
   try {
-    console.log("Fetching public notes...");
     const userNoteData = await NoteModel.find({ isPublic: true });
-
-    console.log("Public notes fetched:", userNoteData);
-
     res.status(200).json({ message: "Success", userNoteData });
   } catch (error) {
-    console.error("Error fetching public notes:", error);
     res.status(500).json({ message: "Error fetching public notes", error });
   }
 }
-// Fetch Update  Notes
+
+// ✏️ Update Note
 export async function updateNote(req, res) {
   try {
     const { id } = req.params;
@@ -239,6 +126,9 @@ export async function updateNote(req, res) {
     note.content = req.body.content;
     note.category = req.body.category;
     note.isPublic = req.body.isPublic;
+    note.noteDate = req.body.noteDate; // ✅ Update noteDate
+    note.reminder = req.body.reminder; // ✅ Update reminder
+
     await note.save();
 
     res.status(200).json({ message: "Note updated successfully", note });
@@ -264,7 +154,7 @@ export async function deleteNote(req, res) {
   }
 }
 
-// 🚮 Delete Multiple Notes
+// 🧹 Delete Multiple Notes
 export async function deleteMultipleNotes(req, res) {
   try {
     const { ids } = req.body;

@@ -12,11 +12,17 @@ const noteSchema = new Schema(
       default: "Other",
     },
     author: { type: Schema.Types.ObjectId, ref: "User" },
-    isPublic: { type: Boolean, default: false }, 
+    isPublic: { type: Boolean, default: false },
+
+    // 👇 Reminder date (for notification etc.)
+    reminder: { type: Date, default: null },
+
+    // 👇 Manual note date for filtering
+    noteDate: { type: String }, // Will store YYYY-MM-DD format (e.g. 2025-04-05)
   },
   { timestamps: true }
 );
 
 const NoteModel = model("Note", noteSchema);
 
-export default NoteModel; 
+export default NoteModel;
