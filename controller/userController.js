@@ -114,12 +114,11 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-
 //->->->->->->->->->->->->->->->->->->->->->->->->->->
 
 export const getLoggedInUser = async (req, res) => {
   try {
-    const userId = req.user.id; // token middleware se milta hai
+    const userId = req.user.userId; // token middleware se milta hai
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
@@ -287,10 +286,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-
-
 //->->->->->->->->->->->->->->->->->->->->->->->->->->->
-
 
 export const changeUserProfile = async (req, res) => {
   try {
@@ -306,7 +302,9 @@ export const changeUserProfile = async (req, res) => {
     const { firstName, lastName } = req.body;
 
     if (!firstName || !lastName) {
-      return res.status(400).json({ message: "First name and last name are required" });
+      return res
+        .status(400)
+        .json({ message: "First name and last name are required" });
     }
 
     const user = await User.findById(decoded.userId);
@@ -319,13 +317,18 @@ export const changeUserProfile = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ message: "Profile updated successfully", user: {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-    }});
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+    });
   } catch (error) {
     console.error("Error changing profile:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
