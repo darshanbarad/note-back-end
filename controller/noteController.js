@@ -72,24 +72,31 @@ export async function getUserNote(req, res) {
       sortOptions["createdAt"] = -1;
     }
 
+    // 🔹 1. Get current user's notes (private + public)
     let userNotes = await NoteModel.find(query)
       .populate("author", "name email")
       .sort(sortOptions);
 
+    // 🔹 2. If isPublic filter applied, apply it on user's notes
     if (isPublic !== undefined) {
       userNotes = userNotes.filter(
         (note) => note.isPublic === (isPublic === "true")
       );
     }
 
+    // 🔹 3. Get public notes from other users (excluding current user)
     let publicNotes = [];
     if (!search) {
-      publicNotes = await NoteModel.find({ isPublic: true })
+      publicNotes = await NoteModel.find({
+        isPublic: true,
+        author: { $ne: userId }, // 👈 dusre users ke hi public notes
+      })
         .populate("author", "name email")
         .sort(sortOptions);
     }
 
-    const combinedNotes = search ? userNotes : [...userNotes, ...publicNotes];
+    // 🔹 4. Combine all notes: user's + others' public notes
+    const combinedNotes = [...userNotes, ...publicNotes];
 
     res.status(200).json({ message: "Success", userNoteData: combinedNotes });
   } catch (error) {
@@ -97,6 +104,7 @@ export async function getUserNote(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
 
 export async function getPublicNote(req, res) {
   try {
