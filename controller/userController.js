@@ -76,7 +76,6 @@ export const loginUser = async (req, res) => {
 
 //->->->->->->->->->->->->->->->->->->->->->->->->->->->
 
-
 export async function authenticate(req, res) {
   const token = req.headers.authorization;
 
@@ -220,5 +219,95 @@ export const deleteAccount = async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+//->->->->->->->->->->->->->->->->->->->->->->->->->->->
+
+export const changePassword = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Authorization token missing" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    // 1. Check old password match
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Old password is incorrect" });
+    }
+
+    // 2. Check new passwords match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "New passwords do not match" });
+    }
+
+    // 3. Hash new password and update
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+
+
+//->->->->->->->->->->->->->->->->->->->->->->->->->->->
+
+
+export const changeUserProfile = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Authorization token missing" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
+    const { firstName, lastName } = req.body;
+
+    if (!firstName || !lastName) {
+      return res.status(400).json({ message: "First name and last name are required" });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.firstName = firstName;
+    user.lastName = lastName;
+
+    await user.save();
+
+    res.status(200).json({ message: "Profile updated successfully", user: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    }});
+  } catch (error) {
+    console.error("Error changing profile:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
