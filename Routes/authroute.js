@@ -5,6 +5,7 @@ import {
   getAllUsers,
   searchUsers,
   logoutUser,
+  deleteAccount,
 } from "../controller/userController.js";
 import { authToken } from "../middleware/token.js";
 const router = express.Router();
@@ -14,5 +15,6 @@ router.post("/login", loginUser);
 router.get("/getuserData", authToken, getAllUsers);
 router.get("/search", searchUsers);
 router.post("/logoutUser", logoutUser);
+router.delete("/delete-account", deleteAccount);
 
 export default router;
