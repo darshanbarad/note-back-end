@@ -8,6 +8,7 @@ import {
   deleteAccount,
   changePassword,
   changeUserProfile,
+  getLoggedInUser,
 } from "../controller/userController.js";
 import { authToken } from "../middleware/token.js";
 const router = express.Router();
@@ -15,6 +16,7 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/getuserData", authToken, getAllUsers);
+router.get("/getloginuserdata", authToken, getLoggedInUser);
 router.get("/search", searchUsers);
 router.post("/logoutUser", logoutUser);
 router.delete("/delete-account", deleteAccount);
