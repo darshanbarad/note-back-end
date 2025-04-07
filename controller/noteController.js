@@ -1,6 +1,5 @@
 import NoteModel from "../models/UserNoteSchema.js";
 
-// 📝 Create Note
 export async function createNote(req, res) {
   const userId = req.user.userId;
 
@@ -11,8 +10,8 @@ export async function createNote(req, res) {
       category: req.body.category,
       author: userId,
       isPublic: req.body.isPublic,
-      noteDate: req.body.noteDate, // 📅 Manual Note Date
-      reminder: req.body.reminder, // ⏰ Reminder Date
+      noteDate: req.body.noteDate,
+      reminder: req.body.reminder,
     });
 
     const userNote = await Note.save();
@@ -22,7 +21,6 @@ export async function createNote(req, res) {
   }
 }
 
-// 🔍 Get Notes
 export async function getUserNote(req, res) {
   try {
     const userId = req.user.userId;
@@ -50,7 +48,6 @@ export async function getUserNote(req, res) {
       query.category = category;
     }
 
-    // ✅ Filter by noteDate (exact match)
     if (noteDate) {
       const selectedDate = new Date(noteDate);
       const nextDate = new Date(selectedDate);
@@ -61,7 +58,6 @@ export async function getUserNote(req, res) {
       };
     }
 
-    // ✅ Filter by createdAt date range
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -102,7 +98,6 @@ export async function getUserNote(req, res) {
   }
 }
 
-// 🌐 Get Public Notes
 export async function getPublicNote(req, res) {
   try {
     const userNoteData = await NoteModel.find({ isPublic: true });
@@ -112,7 +107,6 @@ export async function getPublicNote(req, res) {
   }
 }
 
-// ✏️ Update Note
 export async function updateNote(req, res) {
   try {
     const { id } = req.params;
@@ -126,8 +120,8 @@ export async function updateNote(req, res) {
     note.content = req.body.content;
     note.category = req.body.category;
     note.isPublic = req.body.isPublic;
-    note.noteDate = req.body.noteDate; // ✅ Update noteDate
-    note.reminder = req.body.reminder; // ✅ Update reminder
+    note.noteDate = req.body.noteDate; 
+    note.reminder = req.body.reminder; 
 
     await note.save();
 
@@ -137,7 +131,6 @@ export async function updateNote(req, res) {
   }
 }
 
-// 🗑️ Delete a Note
 export async function deleteNote(req, res) {
   try {
     const { id } = req.params;
@@ -154,7 +147,6 @@ export async function deleteNote(req, res) {
   }
 }
 
-// 🧹 Delete Multiple Notes
 export async function deleteMultipleNotes(req, res) {
   try {
     const { ids } = req.body;

@@ -4,35 +4,29 @@ import User from "../models/User.js";
 
 export const registerUser = async (req, res) => {
   try {
-    console.log("Register API Called");
     const { firstName, lastName, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
-    console.log("existingUser:", existingUser);
+
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
     const salt = await bcrypt.genSalt(10);
-    console.log("Generated Salt:", salt);
     const hashedPassword = await bcrypt.hash(password, salt);
-    console.log("Hashed Password:", hashedPassword);
 
     const newUser = new User({
       firstName,
       lastName,
       email,
       password: hashedPassword,
-      Token: "",
+      Token: null,
     });
-    console.log("New User Object:", newUser);
 
     await newUser.save();
-    console.log("User saved successfully!");
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    console.error("Registration Error:", error);
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
@@ -43,11 +37,9 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    console.log("Login API Called");
     const { email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
-    console.log("existingUser:", existingUser);
     if (!existingUser) {
       return res.status(400).json({ message: "User not found" });
     }
@@ -56,7 +48,6 @@ export const loginUser = async (req, res) => {
       password,
       existingUser.password
     );
-    console.log("Password Valid:", isPasswordValid);
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -66,7 +57,6 @@ export const loginUser = async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: "24h" }
     );
-    console.log("token: ", token);
 
     const updateduser = await User.findOneAndUpdate(
       { email: existingUser.email },
@@ -74,12 +64,10 @@ export const loginUser = async (req, res) => {
       { returnDocument: "after" }
     );
 
-    console.log("updateduser: ", updateduser);
     res
       .status(200)
       .json({ message: "Login successful", token, data: existingUser });
   } catch (error) {
-    console.error("Login Error:", error);
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
@@ -87,6 +75,7 @@ export const loginUser = async (req, res) => {
 };
 
 //->->->->->->->->->->->->->->->->->->->->->->->->->->->
+
 
 export async function authenticate(req, res) {
   const token = req.headers.authorization;
@@ -109,15 +98,12 @@ export async function authenticate(req, res) {
 //->->->->->->->->->->->->->->->->->->->->->->->->->->->
 export const getAllUsers = async (req, res) => {
   try {
-    // Fetch all users from the database
-    const users = await User.find().select("-password"); // -password to exclude passwords from response
+    const users = await User.find().select("-password");
 
-    // If no users are found
     if (!users || users.length === 0) {
       return res.status(404).json({ message: "No users found" });
     }
 
-    // Return the list of users
     res
       .status(200)
       .json({ message: "Users retrieved successfully", data: users });
@@ -169,5 +155,39 @@ export const searchUsers = async (req, res) => {
       message: "Internal Server Error",
       error: error.message,
     });
+  }
+};
+
+//->->->->->->->->->->->->->->->->->->->->->->->->->->->
+
+export const logoutUser = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Authorization token missing" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    // Find the user with this token
+    const user = await User.findOne({ Token: token });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Invalid token or user already logged out" });
+    }
+
+    // Remove token from DB (set it to null or undefined)
+    user.Token = null;
+    await user.save();
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
