@@ -20,21 +20,13 @@ export async function createNote(req, res) {
     res.status(500).json({ message: "Error creating note", error });
   }
 }
-
 export async function getUserNote(req, res) {
   try {
     const userId = req.user.userId;
-    const {
-      search,
-      sort,
-      order,
-      category,
-      startDate,
-      endDate,
-      isPublic,
-      noteDate,
-    } = req.query;
+    const { search, sort, order, category, startDate, endDate, noteDate } =
+      req.query;
 
+    // 🔹 USER NOTES: show all (private + public)
     let query = { author: userId };
 
     if (search) {
@@ -62,15 +54,10 @@ export async function getUserNote(req, res) {
       query.createdAt = { $gte: start, $lte: end };
     }
 
-    if (isPublic !== undefined) {
-      query.isPublic = isPublic === "true";
-    }
-
     let sortOptions = {};
     sortOptions[sort || "createdAt"] = order === "asc" ? 1 : -1;
 
-    // 🔹 USER NOTES
-    let userNotes = await NoteModel.find(query)
+    const userNotes = await NoteModel.find(query)
       .populate("author", "name email")
       .sort(sortOptions);
 
