@@ -341,15 +341,6 @@ export async function getUserNote(req, res) {
   }
 }
 
-export async function getPublicNote(req, res) {
-  try {
-    const userNoteData = await NoteModel.find({ isPublic: true });
-    res.status(200).json({ message: "Success", userNoteData });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching public notes", error });
-  }
-}
-
 // 🔐 Secure Update Note
 export async function updateNote(req, res) {
   try {
