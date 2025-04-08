@@ -134,23 +134,23 @@ export const getLoggedInUser = async (req, res) => {
 //->->->->->->->->->->->->->->->->->->->->->->->->->->
 export const searchUsers = async (req, res) => {
   try {
-    const { firstName, lastName, email } = req.query; // Get search parameters from query
+    const { firstName, lastName, email } = req.query;
 
     // Build search conditions
     const searchConditions = {};
 
     if (firstName) {
-      searchConditions.firstName = { $regex: firstName, $options: "i" }; // Case insensitive search
+      searchConditions.firstName = { $regex: firstName, $options: "i" };
     }
     if (lastName) {
-      searchConditions.lastName = { $regex: lastName, $options: "i" }; // Case insensitive search
+      searchConditions.lastName = { $regex: lastName, $options: "i" };
     }
     if (email) {
-      searchConditions.email = { $regex: email, $options: "i" }; // Case insensitive search
+      searchConditions.email = { $regex: email, $options: "i" };
     }
 
     // Find users based on search conditions
-    const users = await User.find(searchConditions).select("-password"); // Exclude password from the result
+    const users = await User.find(searchConditions).select("-password");
 
     if (!users || users.length === 0) {
       return res.status(404).json({
